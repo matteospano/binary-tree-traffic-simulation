@@ -5,9 +5,11 @@ import Gun from './common/gun.tsx';
 function App() {
   return (
     <div className="Main-wrapper">
-      <header className="App-header">
+      <p className="guns">
         <Gun index={0} />
-      </header>
+        <Gun index={1} />
+        <Gun index={2} />
+      </p>
     </div>
   );
 }
