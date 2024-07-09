@@ -13,9 +13,10 @@ export default function Square(props: { index: number, pop: number, spawn?: bool
     }
 
     return (
-        <div className={"square-slot" + (spawn ? " square-spawn" : "") + (frozen ? " square-frozen" : "")}
+        <div id={'S' + index}
+            className={"square-slot" + (spawn ? " square-spawn" : "") + (frozen ? " square-frozen" : "")}
             onClick={freeze}>
-            {pop && index + ': ' + pop}
+            <p>{pop || ''}</p>
         </div>
     );
 }

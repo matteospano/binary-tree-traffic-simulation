@@ -1,4 +1,4 @@
-.square-slot{
+.square-slot {
     height: 30px;
     width: 30px;
     margin-bottom: 50px;
@@ -6,6 +6,13 @@
     background-color: rgba(30, 255, 0, 0.215);
     border-radius: 2px;
 }
-.square-slot:hover{
+
+.square-slot:hover {
     background-color: rgb(77, 255, 0);
+}
+
+.square-slot p {
+    text-align: center;
+    padding: 4px 0px;
+    margin: 0;
 }
