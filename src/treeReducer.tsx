@@ -16,6 +16,10 @@ export const DEF_LAYERS: Layer[] =
         to: [5, 6, 7]
     }]
 
+export interface linkLine {
+    source: number, target: number, prob: number
+}
+
 interface TreeState {
     currLevel: number;
     balls: number;
@@ -28,10 +32,10 @@ const initialState: TreeState = {
     balls: 5,
     layers: DEF_LAYERS,
     population: [
-        0, 0, 50,
+        0, 20, 50,
         0, 10,
         0, 1, 20,
-        0, 1, 30]
+        0, 0, 0]
 };
 
 const treeSlice = createSlice({
