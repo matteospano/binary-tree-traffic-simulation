@@ -17,7 +17,8 @@ export const DEF_LAYERS: Layer[] =
     }]
 
 export interface linkLine {
-    source: number, target: number, prob: number
+    source: number, target: number,
+    prob: number, sel: number
 }
 
 interface TreeState {
@@ -25,17 +26,41 @@ interface TreeState {
     balls: number;
     population: number[];
     layers: Layer[];
+    animation: { layer: number, state: boolean, links: linkLine[] }
 }
 
 const initialState: TreeState = {
     currLevel: 1,
-    balls: 5,
+    balls: 8,
     layers: DEF_LAYERS,
     population: [
         0, 20, 50,
         0, 10,
-        0, 1, 20,
-        0, 0, 0]
+        0, 1, 2,
+        0, 0, 0
+    ],
+    animation: {
+        layer: 99,
+        state: false,
+        links: [
+            { source: 0.0, target: 1.0, prob: 1, sel: 0 },
+            { source: 0.0, target: 1.1, prob: 1, sel: 0 },
+            { source: 0.1, target: 1.1, prob: 1, sel: 0 },
+            { source: 0.2, target: 1.1, prob: 1, sel: 0 },
+
+            { source: 1.0, target: 2.0, prob: 1.0, sel: 0 },
+            { source: 1.0, target: 2.1, prob: 0.5, sel: 0 },
+            { source: 1.1, target: 2.1, prob: 0.5, sel: 0 },
+            { source: 1.1, target: 2.2, prob: 1.0, sel: 0 },
+
+            { source: 2.0, target: 3.0, prob: 0.5, sel: 0 },
+            { source: 2.0, target: 3.1, prob: 0.5, sel: 0 },
+            { source: 2.1, target: 3.0, prob: 0.5, sel: 0 },
+            { source: 2.1, target: 3.1, prob: 0.5, sel: 0 },
+            { source: 2.1, target: 3.2, prob: 0.5, sel: 0 },
+            { source: 2.2, target: 3.2, prob: 0.5, sel: 0 }
+        ]
+    }
 };
 
 const treeSlice = createSlice({
@@ -49,13 +74,25 @@ const treeSlice = createSlice({
         }),
         setNodePop: (state, action: PayloadAction<number[]>) => ({
             ...state,
-            population: action.payload,
-            balls: state.balls + 1
+            population: action.payload
+        }),
+        setAnimation: (state, action: PayloadAction<{ layer: number, state: boolean, links?: linkLine[] }>) => ({
+            ...state,
+            animation: {
+                ...state.animation,
+                layer: action.payload.layer,
+                state: action.payload.state,
+                links: action.payload.state && action.payload.links ?
+                    action.payload.links : state.animation.links.map((l) => { return { ...l, sel: 0 } })
+            },
+            balls: action.payload.layer === 99 ? state.balls + 1 : state.balls
         }),
     }
 });
 
-export const { setCurrLevel, setNodePop }
+export const { setCurrLevel, setNodePop,
+    setAnimation
+}
     = treeSlice.actions;
 
 export default treeSlice.reducer;

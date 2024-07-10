@@ -1,16 +1,72 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./levelBuilder.scss";
 import { useAppSelector } from "../hooks.ts";
 import { Graph } from 'react-d3-graph';
 import { useDispatch } from "react-redux";
-import { linkLine, setNodePop } from "../treeReducer.tsx";
+import { linkLine, setAnimation, setNodePop } from "../treeReducer.tsx";
 
 export default function LevelBuilder(): JSX.Element {
     const dispatch = useDispatch();
     const currLevel = useAppSelector((state) => state.tree.currLevel);
     const balls = useAppSelector((state) => state.tree.balls);
     const nodePop = useAppSelector((state) => state.tree.population);
+    const anim = useAppSelector((state) => state.tree.animation);
     const EMPTY_NODE = { id: 's0', x: 30, y: 30, size: 550, symbolType: 'square', color: 'blue', pop: 0 };
+    const [deltaPop, setDeltaPop] = useState<number[]>(new Array(nodePop.length).fill(0));
+
+    useEffect(() => {
+        if (anim.state)
+            setTimeout(() => {
+                dispatch(setAnimation({ layer: anim.layer === 1 ? 99 : anim.layer, state: false }));
+            }, 1600);
+        else if (deltaPop.some((d) => d != 0)) {
+            let updatePop = [...nodePop];
+            deltaPop.forEach((d, i) => {
+                updatePop[i] -= d;
+            })
+            setDeltaPop(new Array(nodePop.length).fill(0));
+            dispatch(setNodePop(updatePop));
+
+
+            if (anim.layer >= 0) {
+                const currLayer = anim.layer - 1;
+                const nodeLayer = nodeString.filter((n) => Math.floor(n) === currLayer - 1);
+
+                let tempPop = [...updatePop];
+                let pop = new Array(nodePop.length).fill(0);
+                let selLinks = [...anim.links]
+                nodeLayer.forEach((nodeId) => {
+                    const sInd = nodeString.findIndex((node) => node == nodeId);
+                    if (tempPop[sInd] < 0) {
+                        const nextNodes: linkLine[] = anim.links.filter((l) => l.target === +nodeId);
+                        const splitBalls: number[] = splitN(-1 * tempPop[sInd], nextNodes.map((l) => l.prob));
+                        selLinks = selLinks.map((l) => {
+                            let ind = -1;
+                            if (l.target === +nodeId) {
+                                ind++;
+                                return { ...l, sel: splitBalls[ind] }
+                            }
+                            else
+                                return l
+                        });
+
+                        pop[sInd] += tempPop[sInd];
+                        console.log(splitBalls)
+                        nextNodes.forEach((n, i) => {
+                            const sInd = nodeString.findIndex((node) => node === n.source);
+                            tempPop[sInd] -= splitBalls[i];
+                            if (tempPop[sInd] < 0)
+                                pop = negativeNode(tempPop[sInd], sInd, n.source, pop);
+                        });
+                    }
+                })
+                dispatch(setAnimation({ layer: currLayer, state: true, links: selLinks }));
+                //debugger
+                setDeltaPop(pop);
+                dispatch(setNodePop(tempPop));
+            }
+        }
+    }, [anim])
 
     const nodeString = [
         0.0, 0.1, 0.2,
@@ -20,38 +76,19 @@ export default function LevelBuilder(): JSX.Element {
     const levels = 4;
     // Define the nodes
     let nodes = nodeString.map((n, index) => {
-        const lev = Math.floor(n);
+        const layer = Math.floor(n);
         return {
-            ...EMPTY_NODE, id: n, pop: nodePop[index].toString() || '',
-            color: lev === 0 ? 'red' : lev === levels - 1 ? 'green' : 'orange',
-            symbolType: (lev === 0 || lev === levels - 1) ? 'circle' : 'square',
-            x: EMPTY_NODE.x + (n - lev) * 1500,
-            y: EMPTY_NODE.y + lev * 150,
+            ...EMPTY_NODE, id: n, pop: nodePop[index] > 0 ? nodePop[index].toString() : ' ',
+            color: layer === 0 ? 'red' : layer === levels - 1 ? 'green' : 'orange',
+            symbolType: (layer === 0 || layer === levels - 1) ? 'circle' : 'square',
+            x: EMPTY_NODE.x + (n - layer) * 1500,
+            y: EMPTY_NODE.y + layer * 150,
         }
     });
-    // Define the links
-    const links: linkLine[] = [
-        { source: 0.0, target: 1.0, prob: 1 },
-        { source: 0.0, target: 1.1, prob: 1 },
-        { source: 0.1, target: 1.1, prob: 1 },
-        { source: 0.2, target: 1.1, prob: 1 },
-
-        { source: 1.0, target: 2.0, prob: 1.0 },
-        { source: 1.0, target: 2.1, prob: 0.5 },
-        { source: 1.1, target: 2.1, prob: 0.5 },
-        { source: 1.1, target: 2.2, prob: 1.0 },
-
-        { source: 2.0, target: 3.0, prob: 0.5 },
-        { source: 2.0, target: 3.1, prob: 0.5 },
-        { source: 2.1, target: 3.0, prob: 0.5 },
-        { source: 2.1, target: 3.1, prob: 0.5 },
-        { source: 2.1, target: 3.2, prob: 0.5 },
-        { source: 2.2, target: 3.2, prob: 0.5 }
-    ];
     // Define the graph data
     const data = {
         nodes: nodes,
-        links: links
+        links: anim.links
     };
     // Define the graph configuration
     const config = {
@@ -62,31 +99,44 @@ export default function LevelBuilder(): JSX.Element {
             size: 400,
             highlightStrokeColor: 'blue',
             labelProperty: 'pop',
+            fontSize: 11,
             labelPosition: 'right'
         },
         link: {
+            color: "#d3d3d3", //(link) => link.sel ? 'blue' : "#d3d3d3",
             highlightColor: 'lightblue',
+            renderLabel: true,
+            labelProperty: 'sel',
+            fontSize: 11,
             type: 'STRAIGHT' //'CURVE_SMOOTH'
         }
     };
 
     const onClickNode = function (nodeId: string) {
-        if (+nodeId >= levels - 1) {
+        if (+nodeId >= levels - 1 && anim.layer === 99) {
             let tempPop = [...nodePop]
-            const index: number = nodeString.findIndex((n) => n === +nodeId) || 0;
-            const nextNodes: linkLine[] = links.filter((l) => l.target === +nodeId);
-
-            const splitBalls: number[] = splitN(balls, //tempPop[index]
-                nextNodes.map((l) => l.prob));
-            //console.log(index, balls, splitBalls)
-
-            nextNodes.forEach((n, i) => {
-                const sInd = nodeString.findIndex((node) => node === n.source)
-                tempPop[sInd] -= splitBalls[i];
-                //console.log(tempPop[sInd], sInd, n)
-                if (tempPop[sInd] < 0) negativeNode(tempPop[sInd], n.source, tempPop)
+            const nextNodes: linkLine[] = anim.links.filter((l) => l.target === +nodeId);
+            const splitBalls: number[] = splitN(balls,nextNodes.map((l) => l.prob));
+            const selLinks = [...anim.links].map((l) => {
+                let ind = -1;
+                if (l.target === +nodeId) {
+                    ind++;
+                    return { ...l, sel: splitBalls[ind] }
+                }
+                else
+                    return l
             });
-            //console.log(index, balls, splitBalls, tempPop)
+
+            dispatch(setAnimation({ layer: levels - 1, state: true, links: selLinks }));
+
+            let pop = [...deltaPop];
+            nextNodes.forEach((n, i) => {
+                const sInd = nodeString.findIndex((node) => node === n.source);
+                tempPop[sInd] -= splitBalls[i];
+                if (tempPop[sInd] < 0)
+                    pop = negativeNode(tempPop[sInd], sInd, n.source, pop);
+            });
+            setDeltaPop(pop);
             dispatch(setNodePop(tempPop));
         }
         //else lo congela
@@ -94,7 +144,7 @@ export default function LevelBuilder(): JSX.Element {
 
     const onClickLink = function (source, target) {
         window.alert(`Link between ${source} and ${target}, prob:`
-            + links.find((l) => l.source === +source && l.target === +target)?.prob);
+            + anim.links.find((l) => l.source === +source && l.target === +target)?.prob);
     };
 
     function splitN(N: number, prob: number[]): number[] {
@@ -125,25 +175,21 @@ export default function LevelBuilder(): JSX.Element {
         return prob.length - 1; // Fallback in case of rounding errors
     }
 
-    function negativeNode(N: number, nodeId: number, pop: number[]) {
-        let tempPop = [...pop]
-        //     if (nodeId > 0.9) { //prima fila esclusa
-        //         const nextNodes: linkLine[] = links.filter((l) => l.target === +nodeId);
+    function negativeNode(N: number, negInd: number, nodeId: number, pop: number[]) {
+        if (nodeId > 0.9) { //prima fila esclusa
+            const nextNodes: linkLine[] = anim.links.filter((l) => l.target === +nodeId);
 
-        //         const splitBalls: number[] = splitN(-1 * nodePop[negInd],
-        //             nextNodes.map((l) => l.prob));
-        //         //console.log(index, balls, splitBalls)
+            const splitBalls: number[] = splitN(-1 * N,
+                nextNodes.map((l) => l.prob));
 
-        //         nextNodes.forEach((n, i) => {
-        //             const sInd = nodeString.findIndex((node) => node === n.source)
-        //             tempPop[sInd] -= splitBalls[i];
-        //         });
-        //         console.log(nodeId, nodePop[negInd], splitBalls, tempPop)
-        //         dispatch(setNodePop(tempPop));
-        //     }
-        //     else
-        //         tempPop[negInd] = 0;
-        //     dispatch(setNodePop(tempPop));
+            nextNodes.forEach((n, i) => {
+                const sInd = nodeString.findIndex((node) => node === n.source)
+                pop[sInd] += splitBalls[i];
+            });
+        }
+        pop[negInd] = N; //crea un delta di +N che annulla il negative
+        console.log(nodeId, N)
+        return (pop);
     }
 
     return (
@@ -156,7 +202,7 @@ export default function LevelBuilder(): JSX.Element {
                 onClickNode={onClickNode}
                 onClickLink={onClickLink}
             />
-            <h2>balls: {balls}</h2>
+            <h2>balls: {balls} Animation: {anim.layer}{anim.state ? '...' : 'x'}</h2>
         </div>
     );
 };
