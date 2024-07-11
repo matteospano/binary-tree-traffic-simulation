@@ -31,7 +31,7 @@ interface TreeState {
 
 const initialState: TreeState = {
     currLevel: 1,
-    balls: 8,
+    balls: 7,
     layers: DEF_LAYERS,
     population: [
         0, 20, 50,
@@ -76,14 +76,18 @@ const treeSlice = createSlice({
             ...state,
             population: action.payload
         }),
-        setAnimation: (state, action: PayloadAction<{ layer: number, state: boolean, links?: linkLine[] }>) => ({
+        setAnimation: (state, action: PayloadAction<{
+            layer: number, state: boolean,
+            selLinks?: linkLine[], updatePop?: number[]
+        }>) => ({
             ...state,
             animation: {
                 ...state.animation,
                 layer: action.payload.layer,
                 state: action.payload.state,
-                links: action.payload.state && action.payload.links ?
-                    action.payload.links : state.animation.links.map((l) => { return { ...l, sel: 0 } })
+                links: action.payload.selLinks ?
+                    action.payload.selLinks : state.animation.links.map((l) => { return { ...l, sel: 0 } }),
+                population: action.payload.updatePop ? action.payload.updatePop : state.population
             },
             balls: action.payload.layer === 99 ? state.balls + 1 : state.balls
         }),
