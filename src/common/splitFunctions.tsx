@@ -1,13 +1,13 @@
 import { linkLine } from "../treeReducer";
 
-export function recursiveSplit(N: number, nodeId: number,
+export function recursiveSplit(N: number, nodeName: number,
     links: linkLine[], tempPop: number[]
 ): any {
-    const nextNodes: linkLine[] = links.filter((l) => l.target === nodeId);
+    const nextNodes: linkLine[] = links.filter((l) => l.target === nodeName);
     const splitBalls: number[] = splitN(N, nextNodes.map((l) => l.prob));
     let ind = -1;
     const selLinks: linkLine[] = links.map((l) => {
-        if (l.target === nodeId) {
+        if (l.target === nodeName) {
             ind++;
             return { ...l, sel: splitBalls[ind] }
         }

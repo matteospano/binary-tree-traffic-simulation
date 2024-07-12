@@ -13,7 +13,7 @@ export default function LevelBuilder(): JSX.Element {
     const balls = useAppSelector((state) => state.tree.balls);
     const nodePop = useAppSelector((state) => state.tree.population);
     const anim = useAppSelector((state) => state.tree.animation);
-    const [nodeComp, setNodes] = useState<any[]>([]);
+    //const [nodeComp, setNodes] = useState<any[]>([]);
     const debugMode = true;
 
     useEffect(() => {
@@ -27,27 +27,20 @@ export default function LevelBuilder(): JSX.Element {
                     }
                 });
                 dispatch(setAnimation({ layer: anim.layer === 1 ? 99 : anim.layer, state: false, updatePop }));
-            }, anim.layer === 1 ? 300 : debugMode ? 4600 : 1600);
-    }, [anim])
-
-    useEffect(() => {
-        if (anim.layer != 99) { // fai ripartire la ricorsione            
+            }, anim.layer === 1 ? 300 : debugMode ? 1600 : 1600);
+        else if (anim.layer != 99) { // fai ripartire la ricorsione            
             let selLinks = [...anim.links];
             let updatePop = [...nodePop];
-            debugger
             nodePop.forEach((pop, nodeId) => {
                 if (pop < 0) {
-                    selLinks = recursiveSplit(pop, nodeId, selLinks, updatePop);
+                    const nodeName = nodeNames[nodeId];
+                    selLinks = recursiveSplit(pop, nodeName, selLinks, updatePop);
                     updatePop[nodeId] = 0;
                 }
             })
-            debugger
             dispatch(setAnimation({ layer: anim.layer - 1, state: true, selLinks, updatePop }));
-            setNodes(graphNodes(nodeNames, levels, debugMode, updatePop));
         }
-        else
-        setNodes(graphNodes(nodeNames, levels, debugMode, nodePop))
-    }, [nodePop])
+    }, [anim.state]);
 
     const nodeNames = [
         0.0, 0.1, 0.2,
@@ -56,9 +49,10 @@ export default function LevelBuilder(): JSX.Element {
         3.0, 3.1, 3.2];
     const levels = Math.floor(nodeNames[nodeNames.length - 1]);
 
-    const onClickNode = function (nodeId: string) {
-        if (+nodeId >= levels && anim.layer === 99) {
-            const selLinks = recursiveSplit(balls, +nodeId, anim.links, nodePop);
+    const onClickNode = function (nodeName: string) {
+        console.log(+nodeName)
+        if (+nodeName >= levels && anim.layer === 99) {
+            const selLinks = recursiveSplit(balls, +nodeName, anim.links, nodePop);
             dispatch(setAnimation({ layer: levels, state: true, selLinks }));
         }
         //else lo congela
@@ -75,12 +69,9 @@ export default function LevelBuilder(): JSX.Element {
             <h2>Level {currLevel}</h2>
             <Graph
                 id="current-level"
-                data={(nodeComp && nodeComp.length > 0) ? {
-                    nodes: nodeComp,
+                data={{
+                    nodes: graphNodes(nodeNames, levels, debugMode, nodePop),
                     links: anim.links
-                } : {
-                    nodes: [],
-                    links: []
                 }}
                 config={config}
                 onClickNode={onClickNode}

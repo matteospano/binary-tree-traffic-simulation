@@ -72,10 +72,10 @@ const treeSlice = createSlice({
             currLevel: action.payload,
             layers: []
         }),
-        setNodePop: (state, action: PayloadAction<number[]>) => ({
-            ...state,
-            population: action.payload
-        }),
+        // setNodePop: (state, action: PayloadAction<number[]>) => ({
+        //     ...state,
+        //     population: action.payload
+        // }),
         setAnimation: (state, action: PayloadAction<{
             layer: number, state: boolean,
             selLinks?: linkLine[], updatePop?: number[]
@@ -86,15 +86,15 @@ const treeSlice = createSlice({
                 layer: action.payload.layer,
                 state: action.payload.state,
                 links: action.payload.selLinks ?
-                    action.payload.selLinks : state.animation.links.map((l) => { return { ...l, sel: 0 } }),
-                population: action.payload.updatePop ? action.payload.updatePop : state.population
+                    action.payload.selLinks : state.animation.links.map((l) => { return { ...l, sel: 0 } })                
             },
+            population: action.payload.updatePop ? action.payload.updatePop : state.population,
             balls: action.payload.layer === 99 ? state.balls + 1 : state.balls
         }),
     }
 });
 
-export const { setCurrLevel, setNodePop,
+export const { setCurrLevel, //setNodePop,
     setAnimation
 }
     = treeSlice.actions;
