@@ -23,9 +23,9 @@ export const DEF_LINK: linkLine =
 
 export const DEF_LINKS: linkLine[] = [
     { ...DEF_LINK, source: 0.0, target: 1.0 },
-    { ...DEF_LINK, source: 0.0, target: 1.1 },
-    { ...DEF_LINK, source: 0.1, target: 1.1 },
-    { ...DEF_LINK, source: 0.2, target: 1.1 },
+    { ...DEF_LINK, source: 0.0, target: 1.1, prob: 0.33 },
+    { ...DEF_LINK, source: 0.1, target: 1.1, prob: 0.34 },
+    { ...DEF_LINK, source: 0.2, target: 1.1, prob: 0.33 },
 
     { ...DEF_LINK, source: 1.0, target: 2.0 },
     { ...DEF_LINK, source: 1.0, target: 2.1, prob: 0.5 },

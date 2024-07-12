@@ -63,8 +63,8 @@ export default function LevelBuilder(): JSX.Element {
         if (anim.links.find((l) => l.bonus > 0))
             dispatch(setSelectedLink({ select: false, s, t, b: 0 }));
         else {
-            const linkSel = anim.links.find((l) => l.source === s && l.target === t)?.sel || 1;
-            const b = Math.round(linkSel * 10 + (Math.round(1 / linkSel) - 1) * (linkSel * 10 - 1)) / 10;
+            const linkProb = anim.links.find((l) => l.source === s && l.target === t)?.prob || 1;
+            const b = Math.round(linkProb * 10 + (Math.round(1 / linkProb) - 1) * (linkProb * 10 - 1)) / 10;
             //bonus 5 links: 0.2-> 0.6, 4 links: 0.25-> 0.7, 3 links: 0.33/34-> 0.8, 2 links: 0.5-> 0.9
             dispatch(setSelectedLink({ select: true, s, t, b }));
         }
