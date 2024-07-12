@@ -13,7 +13,7 @@ export default function LevelBuilder(): JSX.Element {
     const balls = useAppSelector((state) => state.tree.balls);
     const nodePop = useAppSelector((state) => state.tree.population);
     const anim = useAppSelector((state) => state.tree.animation);
-    const debugMode = false;
+    const debugMode = true;
 
     useEffect(() => {
         if (anim.state)
@@ -26,9 +26,6 @@ export default function LevelBuilder(): JSX.Element {
                     }
                 });
                 dispatch(setAnimation({ layer: anim.layer === 0 ? 99 : anim.layer, state: false, updatePop }));
-                // const bonusLink = anim.links.find((l) => l.bonus > 1);
-                // if (bonusLink)
-                //     dispatch(setSelectedLink({ select: false, s: bonusLink.source, t: bonusLink.target, b: 0 }));
             }, anim.layer === 0 ? 300 : debugMode ? 2000 : 1500);
         else if (anim.layer != 99) { // fai ripartire la ricorsione            
             let selLinks = [...anim.links];
@@ -63,7 +60,7 @@ export default function LevelBuilder(): JSX.Element {
     const onClickLink = function (source: string, target: string) {
         const s: number = +source;
         const t: number = +target;
-        if (anim.links.find((l) => l.bonus > 1))
+        if (anim.links.find((l) => l.bonus > 0))
             dispatch(setSelectedLink({ select: false, s, t, b: 0 }));
         else {
             const linkSel = anim.links.find((l) => l.source === s && l.target === t)?.sel || 1;
