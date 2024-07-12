@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import "./levelBuilder.scss";
 import { useAppSelector } from "../hooks.ts";
 import { Graph } from 'react-d3-graph';
 import { useDispatch } from "react-redux";
-import { linkLine, setAnimation, setNodePop } from "../treeReducer.tsx";
+import { linkLine, setAnimation, setSelectedLink } from "../treeReducer.tsx";
 import { config, graphNodes } from "./properties.tsx";
-import { recursiveSplit, splitN } from "./splitFunctions.tsx";
+import { recursiveSplit } from "./splitFunctions.tsx";
 
 export default function LevelBuilder(): JSX.Element {
     const dispatch = useDispatch();
@@ -13,8 +13,7 @@ export default function LevelBuilder(): JSX.Element {
     const balls = useAppSelector((state) => state.tree.balls);
     const nodePop = useAppSelector((state) => state.tree.population);
     const anim = useAppSelector((state) => state.tree.animation);
-    //const [nodeComp, setNodes] = useState<any[]>([]);
-    const debugMode = true;
+    const debugMode = false;
 
     useEffect(() => {
         if (anim.state)
@@ -26,15 +25,18 @@ export default function LevelBuilder(): JSX.Element {
                         updatePop[nodeId] -= l.sel;
                     }
                 });
-                dispatch(setAnimation({ layer: anim.layer === 1 ? 99 : anim.layer, state: false, updatePop }));
-            }, anim.layer === 1 ? 300 : debugMode ? 1600 : 1600);
+                dispatch(setAnimation({ layer: anim.layer === 0 ? 99 : anim.layer, state: false, updatePop }));
+                // const bonusLink = anim.links.find((l) => l.bonus > 1);
+                // if (bonusLink)
+                //     dispatch(setSelectedLink({ select: false, s: bonusLink.source, t: bonusLink.target, b: 0 }));
+            }, anim.layer === 0 ? 300 : debugMode ? 2000 : 1500);
         else if (anim.layer != 99) { // fai ripartire la ricorsione            
             let selLinks = [...anim.links];
             let updatePop = [...nodePop];
             nodePop.forEach((pop, nodeId) => {
                 if (pop < 0) {
                     const nodeName = nodeNames[nodeId];
-                    selLinks = recursiveSplit(pop, nodeName, selLinks, updatePop);
+                    selLinks = recursiveSplit(-pop, nodeName, selLinks);
                     updatePop[nodeId] = 0;
                 }
             })
@@ -52,16 +54,23 @@ export default function LevelBuilder(): JSX.Element {
     const onClickNode = function (nodeName: string) {
         console.log(+nodeName)
         if (+nodeName >= levels && anim.layer === 99) {
-            const selLinks = recursiveSplit(balls, +nodeName, anim.links, nodePop);
+            const selLinks = recursiveSplit(balls, +nodeName, anim.links);
             dispatch(setAnimation({ layer: levels, state: true, selLinks }));
         }
         //else lo congela
     };
 
-    const onClickLink = function (source, target) {
-        //prob 3/4 - 1/4
-        window.alert(`Link between ${source} and ${target}, prob:`
-            + anim.links.find((l) => l.source === +source && l.target === +target)?.prob);
+    const onClickLink = function (source: string, target: string) {
+        const s: number = +source;
+        const t: number = +target;
+        if (anim.links.find((l) => l.bonus > 1))
+            dispatch(setSelectedLink({ select: false, s, t, b: 0 }));
+        else {
+            const linkSel = anim.links.find((l) => l.source === s && l.target === t)?.sel || 1;
+            const b = Math.round(linkSel * 10 + (Math.round(1 / linkSel) - 1) * (linkSel * 10 - 1)) / 10;
+            //bonus 5 links: 0.2-> 0.6, 4 links: 0.25-> 0.7, 3 links: 0.33/34-> 0.8, 2 links: 0.5-> 0.9
+            dispatch(setSelectedLink({ select: true, s, t, b }));
+        }
     };
 
     return (
@@ -76,7 +85,7 @@ export default function LevelBuilder(): JSX.Element {
                 config={config}
                 onClickNode={onClickNode}
                 onClickLink={onClickLink} />
-            <h2>balls: {balls} Animation: {anim.layer}{anim.state ? '...' : 'x'}</h2>
+            <h2>balls: {balls}{debugMode && ' animation: ' + anim.layer + (anim.state ? '...' : 'x')}</h2>
         </div>
     );
 };

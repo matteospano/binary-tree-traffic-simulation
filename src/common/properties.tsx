@@ -1,7 +1,9 @@
 // Define the graph configuration
 export const config = {
     //directed: true,
+    freezeAllDragEvents:true, //staticGraphWithDragAndDrop
     nodeHighlightBehavior: true,
+    linkHighlightBehavior: true,
     node: {
         color: 'lightgreen',
         size: 400,
@@ -13,8 +15,7 @@ export const config = {
 
     },
     link: {
-        color: "#d3d3d3", //(link) => link.sel ? 'blue' : "#d3d3d3",
-        highlightColor: 'lightblue',
+        highlightColor: "#89CFF0",
         renderLabel: true,
         labelProperty: 'sel',
         fontSize: 15,
